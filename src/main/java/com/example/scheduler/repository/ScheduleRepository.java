@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -21,33 +22,35 @@ public class ScheduleRepository {
     private JdbcTemplate jdbcTemplate;
 
     public Long save(Schedule schedule) {
-        String sql = "INSERT INTO schedules (title, writer, password, created_at, modified_at) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO schedules (title, password, writer_id, created_at, modified_at) VALUES (?, ?, ?, ?, ?)";
+
         return jdbcTemplate.execute((PreparedStatementCreator) connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, schedule.getTitle());
-            ps.setString(2, schedule.getWriter());
-            ps.setString(3, schedule.getPassword());
+            ps.setString(2, schedule.getPassword());
+            ps.setLong(3, schedule.getWriterId());
             ps.setObject(4, schedule.getCreatedAt());
             ps.setObject(5, schedule.getModifiedAt());
             return ps;
-        }, preparedStatement -> {
-            preparedStatement.executeUpdate();
-            var rs = preparedStatement.getGeneratedKeys();
+        }, ps -> {
+            ps.executeUpdate();
+            ResultSet rs = ps.getGeneratedKeys();
             if (rs.next()) return rs.getLong(1);
-            else throw new RuntimeException("ID 생성 실패");
+            else throw new RuntimeException("일정 저장 실패");
         });
     }
-    //일저 전체 조회
-    public List<Schedule> findAll(String writer, String modifiedDate) {
+
+    //일정 전체 조회
+    public List<Schedule> findAllByWriterId(Long writerId, String modifiedDate) {
         StringBuilder sql = new StringBuilder("SELECT * FROM schedules WHERE 1=1");
         List<Object> params = new ArrayList<>();
 
-        if (writer != null && !writer.isEmpty()) {
-            sql.append(" AND writer = ?");
-            params.add(writer);
+        if (writerId != null) {
+            sql.append(" AND writer_id = ?");
+            params.add(writerId);
         }
 
-        if (modifiedDate != null && !modifiedDate.isEmpty()) {
+        if (modifiedDate != null && !modifiedDate.isBlank()) {
             sql.append(" AND DATE(modified_at) = ?");
             params.add(LocalDate.parse(modifiedDate));
         }
@@ -55,16 +58,16 @@ public class ScheduleRepository {
         sql.append(" ORDER BY modified_at DESC");
 
         return jdbcTemplate.query(sql.toString(), params.toArray(), (rs, rowNum) -> {
-            Schedule s = new Schedule();
-            s.setId(rs.getLong("id"));
-            s.setTitle(rs.getString("title"));
-            s.setWriter(rs.getString("writer"));
-            s.setPassword(rs.getString("password")); // 저장용, 응답엔 사용 안함
-            s.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
-            s.setModifiedAt(rs.getTimestamp("modified_at").toLocalDateTime());
-            return s;
+            Schedule schedule = new Schedule();
+            schedule.setId(rs.getLong("id"));
+            schedule.setTitle(rs.getString("title"));
+            schedule.setWriterId(rs.getLong("writer_id"));
+            schedule.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+            schedule.setModifiedAt(rs.getTimestamp("modified_at").toLocalDateTime());
+            return schedule;
         });
     }
+
     //일정 단건 조회
     public Schedule findById(Long id) {
         String sql = "SELECT * FROM schedules WHERE id = ?";
@@ -72,7 +75,7 @@ public class ScheduleRepository {
             Schedule s = new Schedule();
             s.setId(rs.getLong("id"));
             s.setTitle(rs.getString("title"));
-            s.setWriter(rs.getString("writer"));
+            s.setWriterId(rs.getLong("writer_id"));
             s.setPassword(rs.getString("password"));
             s.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
             s.setModifiedAt(rs.getTimestamp("modified_at").toLocalDateTime());
@@ -84,10 +87,10 @@ public class ScheduleRepository {
 
     //단건 일정 수정
     public void update(Schedule schedule) {
-        String sql = "UPDATE schedules SET title = ?, writer = ?, modified_at = ? WHERE id = ?";
+        String sql = "UPDATE schedules SET title = ?, writer_id = ?, modified_at = ? WHERE id = ?";
         jdbcTemplate.update(sql,
                 schedule.getTitle(),
-                schedule.getWriter(),
+                schedule.getWriterId(),
                 schedule.getModifiedAt(),
                 schedule.getId()
         );

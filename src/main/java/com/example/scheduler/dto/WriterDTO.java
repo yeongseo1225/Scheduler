@@ -1,12 +1,10 @@
 package com.example.scheduler.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import com.fasterxml.jackson.annotation.JsonFormat;
-
 
 import java.time.LocalDateTime;
 
@@ -14,14 +12,13 @@ import java.time.LocalDateTime;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ScheduleDTO {
+
+public class WriterDTO {
     private Long id;
-    private String title;
-    private Long writerId;     // FK
-    private String writerName;
+    private String name;
+    private String email;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime modifiedAt;
 }
-

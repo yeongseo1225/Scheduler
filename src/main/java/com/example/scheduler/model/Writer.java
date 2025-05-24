@@ -1,18 +1,20 @@
 package com.example.scheduler.model;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-
 @Getter
 @Setter
-public class Schedule {
+@AllArgsConstructor
+@NoArgsConstructor
+public class Writer {
     private Long id;
-    private String title;
-    private String password;
-    private Long writerId;
+    private String name;
+    private String email;
     private LocalDateTime createdAt;
     private LocalDateTime modifiedAt;
 }
